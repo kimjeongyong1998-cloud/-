@@ -1,0 +1,18 @@
+<!doctype html><html lang="ko"><meta name="viewport" content="width=device-width,initial-scale=1"><title>사진 검사</title><link rel="stylesheet" href="/static/style.css"><body class="dark"><main class="mobile"><div class="hero"><b>PHOTO CHECK</b><h1>사진 검사</h1><p>사진을 촬영하면 AI가 기준 사진과 비교합니다.</p></div>{% if not ready %}<div class="warning">아직 검사 준비가 되지 않았습니다.</div>{% endif %}
+<label class="camera" for="photo"><span>📷</span><strong>사진 촬영 / 선택</strong><small>휴대폰 카메라를 사용할 수 있습니다.</small></label><input id="photo" type="file" accept="image/*" capture="environment" hidden {% if not ready %}disabled{% endif %}><img id="preview">
+<button id="go" class="go" {% if not ready %}disabled{% endif %}>AI 검사하기</button><div id="loading">AI가 사진을 분석 중입니다...</div>
+<section id="result"><div id="mark"></div><h2 id="res"></h2><strong id="score"></strong><p id="desc"></p><button onclick="location.reload()">다시 검사</button></section>
+</main><script>
+let file; const input=document.querySelector("#photo"),preview=document.querySelector("#preview");
+input?.addEventListener("change",()=>{file=input.files[0];if(file){preview.src=URL.createObjectURL(file);preview.style.display="block"}});
+document.querySelector("#go")?.addEventListener("click",async()=>{
+ if(!file){alert("사진을 먼저 선택해주세요.");return}
+ document.querySelector("#go").disabled=true;document.querySelector("#loading").style.display="block";
+ let fd=new FormData();fd.append("photo",file);
+ try{let r=await fetch("/api/check",{method:"POST",body:fd}),d=await r.json();if(!d.ok)throw Error(d.error);
+ let box=document.querySelector("#result");box.className=d.result.toLowerCase();box.style.display="block";
+ document.querySelector("#mark").textContent=d.result==="PASS"?"✓":"×";document.querySelector("#res").textContent=d.result;document.querySelector("#score").textContent=d.score+"%";
+ document.querySelector("#desc").textContent="PASS 기준 "+d.threshold+"% · AI 이미지 유사도 결과입니다.";
+ }catch(e){alert(e.message)}finally{document.querySelector("#loading").style.display="none";document.querySelector("#go").disabled=false}
+});
+</script></body></html>
